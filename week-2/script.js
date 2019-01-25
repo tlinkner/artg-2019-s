@@ -2,6 +2,99 @@ const migrationDataPromise = d3.csv('../data/un-migration/Table 1-Table 1.csv', 
 	.then(data => data.reduce((acc,v) => acc.concat(v), []));
 const countryCodePromise = d3.csv('../data/un-migration/ANNEX-Table 1.csv', parseCountryCode)
 	.then(data => new Map(data));
+const metadatPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
+
+
+// combine three Promises. ensures all data is loaded
+Promise.all([
+    migrationDataPromise, 
+    countryCodePromise, 
+    metadatPromise
+  ])
+  .then(([migration, countryCode, metadata]) => {
+//    console.log(migration);
+//    console.log(countryCode);
+//    console.log(metadata);
+
+      // group by year
+      // write our data at each point, structure and count
+//      const years = d3.nest()
+//        .key(d => d.year)
+//        .entries(migration)
+//        .map(a => {
+//          return {
+//            year: a.key,
+//            total: d3.sum(a.values, d => d.value),
+//            value: a.values
+//          }
+//        });
+//      console.log(years);
+
+//    const originCountries = d3.nest()
+//      .key( d => d.origin_name)
+//      .entries(migration)
+//      .map(a => a.key);
+
+
+  // filter
+//    const migrationFromUs = migration
+//      .filter(d => d.origin_name === 'United States of America')
+//      .filter(d => d.dest_name === 'Cuba')
+//      .filter(d => d.year === 2000);
+//    console.log(migrationFromUs);
+
+
+// Key 
+
+//      console.log(migration);
+//      console.log(countryCode);
+//      console.log(metadata);
+      
+      
+      // Convet metatdata to a map
+//      console.log(metadata);
+      
+      const metadata_tmp = metadata.map(d => {
+        return [d.iso_num, d]
+      })
+      
+//      console.log(metadata_tmp);
+      
+      const metadataMap = new Map(metadata_tmp);
+      
+//      console.log(metadataMap);
+
+      // From migration, take country name, 
+      // Go to country code, look up code
+      const migrationAugmented = migration.map(d => {
+        // look code for origin 
+        const origin_code = countryCode.get(d.origin_name);
+        const dest_code = countryCode.get(d.dest_name);
+        // Go to metadata, look up region
+        const origin_metadata = metadataMap.get(origin_code);
+        const dest_metadata = metadataMap.get(dest_code);
+        
+//        if (!origin_metadata) {
+//          console.log(`lookup failed for ${d.origin_name} ${origin_code}`)
+//        }
+        
+        d.origin_code = origin_code;
+        d.dest_code = dest_code;
+        
+        if(origin_metadata) {
+          d.origin_subregion = origin_metadata.subregion;
+        }
+        if(dest_metadata) {
+          d.dest_subregion = dest_metadata.subregion;
+        }
+        
+        return d;
+      });
+      console.log(migrationAugmented);
+      
+      
+      
+  });
 
 
 /* 
@@ -52,7 +145,7 @@ function parseMetadata(d){
 function parseCountryCode(d){
 	return [
 		d['Region, subregion, country or area'],
-		d.Code
+		d.Code.padStart(3,'0')
 	]
 }
 

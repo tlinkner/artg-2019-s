@@ -17,13 +17,17 @@ d3.csv('../../data/world-bank/cb704cf4-fe8f-4f1b-ae0c-2a51c26f295f_Data.csv', pa
 		// - series name, such as "Population, total"
 		//And return small array of values, sorted by year
 		function filterByCountrySeries(rows, country, series){
-			//YOUR CODE HERE
+      // map?
+      const filteredData = rows.filter(d => d.countryCode === country)
+        .filter(d => d.series === series);
+      return filteredData;
 		}
 
 		//Now test this function
 		console.log(filterByCountrySeries(rows, "BHR", "Population, total"));
 
 		//Can the function definition live somewhere else?
+    // Yes because all vars are passed through the interface
 	});
 
 //You don't have to do anything here, but try to understand what these functions are doing
@@ -41,6 +45,8 @@ function parse(d){
 		"2017": d['2017 [YR2017]']==='..'?undefined:+d['2017 [YR2017]']
 	}
 }
+
+// .reduce is new. was in final project but I we didn't discuss it.
 
 function transform(data){
 	return data.map(function(d){
