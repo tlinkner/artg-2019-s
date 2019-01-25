@@ -2,54 +2,6 @@ const migrationDataPromise = d3.csv('../data/un-migration/Table 1-Table 1.csv', 
 	.then(data => data.reduce((acc,v) => acc.concat(v), []));
 const countryCodePromise = d3.csv('../data/un-migration/ANNEX-Table 1.csv', parseCountryCode)
 	.then(data => new Map(data));
-<<<<<<< HEAD
-const metadataPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
-
-Promise.all([
-		migrationDataPromise,
-		countryCodePromise,
-		metadataPromise
-	])
-	.then(([migration, countryCode, metadata]) => {
-
-		//Convert metadata to a map
-		const metadata_tmp = metadata.map(a => {
-			return [a.iso_num, a]
-		});
-		const metadataMap = new Map(metadata_tmp);
-
-		const migrationAugmented = migration.map(d => {
-
-			const origin_code = countryCode.get(d.origin_name);
-			const dest_code = countryCode.get(d.dest_name);
-
-			d.origin_code = origin_code;
-			d.dest_code = dest_code;
-
-			//Take the 3-digit code, get metadata record
-			const origin_metadata = metadataMap.get(origin_code);
-			const dest_metadata = metadataMap.get(dest_code);
-
-			// if(!origin_metadata){
-			// 	console.log(`lookup failed for ` + d.origin_name + ' ' + d.origin_code);
-			// }
-			// if(!dest_metadata){
-			// 	console.log(`lookup failed for ${d.origin_name} ${d.origin_code}`)
-			// }
-			if(origin_metadata){
-				d.origin_subregion = origin_metadata.subregion;
-			}
-			if(dest_metadata){
-				d.dest_subregion = dest_metadata.subregion;
-			}
-
-			return d;
-		});
-		
-		console.log(migrationAugmented);
-
-	})
-=======
 const metadatPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
 
 
@@ -60,60 +12,12 @@ Promise.all([
     metadatPromise
   ])
   .then(([migration, countryCode, metadata]) => {
-//    console.log(migration);
-//    console.log(countryCode);
-//    console.log(metadata);
 
-      // group by year
-      // write our data at each point, structure and count
-//      const years = d3.nest()
-//        .key(d => d.year)
-//        .entries(migration)
-//        .map(a => {
-//          return {
-//            year: a.key,
-//            total: d3.sum(a.values, d => d.value),
-//            value: a.values
-//          }
-//        });
-//      console.log(years);
-
-//    const originCountries = d3.nest()
-//      .key( d => d.origin_name)
-//      .entries(migration)
-//      .map(a => a.key);
-
-
-  // filter
-//    const migrationFromUs = migration
-//      .filter(d => d.origin_name === 'United States of America')
-//      .filter(d => d.dest_name === 'Cuba')
-//      .filter(d => d.year === 2000);
-//    console.log(migrationFromUs);
-
-
-// Key 
-
-//      console.log(migration);
-//      console.log(countryCode);
-//      console.log(metadata);
-      
-      
-      // Convet metatdata to a map
-//      console.log(metadata);
-      
       const metadata_tmp = metadata.map(d => {
         return [d.iso_num, d]
       })
       
-//      console.log(metadata_tmp);
-      
       const metadataMap = new Map(metadata_tmp);
-      
-//      console.log(metadataMap);
-
-      // From migration, take country name, 
-      // Go to country code, look up code
       const migrationAugmented = migration.map(d => {
         // look code for origin 
         const origin_code = countryCode.get(d.origin_name);
@@ -121,10 +25,6 @@ Promise.all([
         // Go to metadata, look up region
         const origin_metadata = metadataMap.get(origin_code);
         const dest_metadata = metadataMap.get(dest_code);
-        
-//        if (!origin_metadata) {
-//          console.log(`lookup failed for ${d.origin_name} ${origin_code}`)
-//        }
         
         d.origin_code = origin_code;
         d.dest_code = dest_code;
@@ -138,43 +38,131 @@ Promise.all([
         
         return d;
       });
-      console.log(migrationAugmented);
       
+      const migrationFiltered = migrationAugmented.filter(d=>d.origin_code ==="840");
+
+      const usData = d3.nest()
+        .key(d => d.year)
+        .entries(migrationFiltered)
+        .map(yearGroup => {
+          return {
+            year: +yearGroup.key, // ensure a number
+            total: d3.sum(yearGroup.values, d => d.value), // pick prop out of sum
+            max: d3.max(yearGroup.values, d => d.value),
+            min: d3.min(yearGroup.values, d => d.value)
+          }
+        });
+        
+//      lineChart(
+//        data, // us data we just filted
+//        d3.select('.module').node() // selection + node
+//      );
+        
+      // Group by subregion, then by year
+      const subregionsData = d3.nest()
+        .key(d => d.origin_subregion)
+        .key(d => d.year)
+        .rollup(values => d3.sum(values, d => d.value))
+        .entries(migrationAugmented);
+
+      console.log(subregionsData);
       
-      
+      d3.select('.main')
+        .selectAll('.chart') // 0 elems
+        .data(subregionsData)
+        .enter()
+        .append('div') // if a deficit, create elems
+        .attr('class','chart') // has a data friend, each region joined to a chart
+        .each(function(d){
+          console.log(d.values)
+          console.log(this)
+          lineChart(d.values, this);
+        }) // takes a selection, iterate over items with bound data
+        ;
+
+
   });
 
 
-/* 
- * DATA DISCOVERY
- */
+// Drawing a chart based on serial x-y data
+// Function signature: expains wat args are expected and type
+function lineChart(data, rootDOM){
 
-// Convert metadata into a map, with ISO_num as the key
-// Then console.log the metadata map and observe its structure
+  // need to make sure array is sorted
 
-// console.log countryCode map and observe its structure
 
-// For the migration dataset, how many years does it cover? How many origin countries? How many destination countries?
+//  console.log("linechart");
+//  console.log(data);
+//  console.log(rootDOM);
+  const W = rootDOM.clientWidth;
+  const H = rootDOM.clientHeight;
+  const margin = {t: 32,r: 32,b: 64, l: 64};
+  const innerWidth = W - margin.l - margin.r;
+  const innerHeight = H - margin.t - margin.b;
+  
+	const scaleX = d3.scaleLinear().domain([1985,2020]).range([0, innerWidth]);
+	const scaleY = d3.scaleLinear().domain([0, 25000000]).range([innerHeight,0]);
 
-// Let's filter this the migration dataset
-// How many people from the U.S. lived in Japan in the year 1995?
+  const axisX = d3.axisBottom()
+    .scale(scaleX)
+    .tickFormat(function(val){
+      return "'"+String(val).slice(-2)
+    });
+    
+  const axisY = d3.axisLeft()
+    .scale(scaleY)
+    .tickSize(-innerWidth)
+    .ticks(3);
 
-// How many people from the U.S. lived abroad in the year 1995?
 
-// How many people from the U.S. lived aborad in all the years in the dataset?
+  // temp hack to remove last elem
+  data.pop();
 
-// How many people from abroad lived in the U.S. in all the years in the dataset?
+  const lineGenerator = d3.line()
+  .x(d => scaleX(d.key))
+  .y(d => scaleY(d.value));
 
-/* 
- * DATA TRANSFORMATION
- */
-// Join the migration dataset with countryCode
+  const areaGenerator = d3.area()
+  .x(d => scaleX(+d.key))
+  .y0(innerHeight)
+  .y1(d => scaleY(d.value));
 
-// Further join the dataset with region and subregion
+  console.log(innerWidth);
+  console.log(scaleX(1990));
 
-// Nest/group data by subregion, and produce time-series data for each subregion
+  const svg = d3.select(rootDOM)
+    .append('svg')
+    .attr('width', W)
+    .attr('height', H);
+    
+  const plot = svg.append('g')
+    .attr('transform', `translate(${margin.l}, ${margin.t})`);
 
->>>>>>> e1a1f5293c0052592d35a26c846f77df7fb95ca5
+  plot.append('path')
+    .attr('class','line')
+    .datum(data)
+    .attr('d',d => lineGenerator(d))
+    .attr('fill','none')
+    .attr('stroke','red');
+
+  plot.append('path')
+    .attr('class','area')
+    .datum(data)
+    .attr('d',d => areaGenerator(d))
+    .attr('fill','red')
+    .attr('fill-opacity',0.3);
+
+  plot.append('g')
+    .attr('class','axis-x')
+    .attr('transform',`translate(0,${innerHeight})`)
+    .call(axisX);
+    
+  plot.append('g')
+    .attr('class','axis-y')
+    .call(axisY);
+
+
+}
 
 
 //Utility functions for parsing metadata, migration data, and country code
@@ -194,11 +182,7 @@ function parseMetadata(d){
 function parseCountryCode(d){
 	return [
 		d['Region, subregion, country or area'],
-<<<<<<< HEAD
-		d.Code.padStart(3, '0')
-=======
 		d.Code.padStart(3,'0')
->>>>>>> e1a1f5293c0052592d35a26c846f77df7fb95ca5
 	]
 }
 
