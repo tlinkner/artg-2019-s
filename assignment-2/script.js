@@ -27,7 +27,17 @@ Promise.all([
 		//YOUR CODE HERE
 		//Nest/group migration_2000 by origin_country
 		//Then sum up the total value, using either nest.rollup or array.map
-		let migration_origin_by_country = d3.nest() //COMPLETE HERE
+		let migration_origin_by_country = d3.nest()
+      .key(d => d.origin_name)
+      .entries(migration_2000)
+      .map(originGroup => {
+        return {
+          key: originGroup.key,
+          total: d3.sum(originGroup.values, d => d.value)
+        }
+      });
+      
+    console.log(migration_origin_by_country);
 
 		//YOUR CODE HERE
 		//Then, join the transformed migration data to the lngLat values in the metadata

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Map Lookup Example</title>
+<style>body {font-family: sans-serif;}</style>
+</head>
+<body>
+<h1>Map Lookup Example</h1>
+<script src="../lib/d3/d3.min.js"></script>
+<script>
+
+const states = [
+  ["AL","Alabama"],
+  ["AK","Alaska"],
+  ["AZ","Arizona"],
+  ["AR","Arkansas"],
+  ["CA","California"],
+  ["CO","Colorado"],
+  ["CT","Connecticut"],
+  ["DE","Delaware"],
+  ["FL","Florida"],
+  ["GA","Georgia"]
+];
+
+const fip = [
+  {name: "Alabama", stateCode: "AL",fipCode: "01"},
+  {name: "Alaska", stateCode: "AK",fipCode: "02"},
+  {name: "Arizona", stateCode: "AZ",fipCode: "04"},
+  {name: "Arkansas", stateCode: "AR",fipCode: "05"},
+  {name: "California", stateCode: "CA",fipCode: "06"},
+  {name: "Colorado", stateCode: "CO",fipCode: "08"},
+  {name: "Connecticut", stateCode: "CT",fipCode: "09"},
+  {name: "Delaware", stateCode: "DE",fipCode: "10"},
+  {name: "Florida", stateCode: "FL",fipCode: "12"},
+  {name: "Georgia", stateCode: "GA",fipCode: "13"}
+];
+
+const house = [
+  {stateCode:"AZ",district:1,party:"democrat",name:"Tom O'Halleran"},
+  {stateCode:"AZ",district:2,party:"democrat",name:"Ann Kirkpatrick"},
+  {stateCode:"AZ",district:3,party:"democrat",name:"Raul Grijalva"},
+  {stateCode:"AZ",district:4,party:"republican",name:"Paul Gosar"},
+  {stateCode:"AZ",district:5,party:"republican",name:"Andy Biggs"},
+  {stateCode:"AZ",district:6,party:"republican",name:"David Schweikert"},
+  {stateCode:"AZ",district:7,party:"democrat",name:"Ruben Gallego"},
+  {stateCode:"AZ",district:8,party:"republican",name:"Trent Franks"},
+  {stateCode:"AZ",district:9,party:"democrat",name:"Greg Stanton"}
+]
+
+
+//Make maps for lookup =========================
+
+const stateLookup = new Map(states);
+//console.log(stateLookup.get("AK"));
+
+const fipTmp = fip.map(d => {
+  return [d.stateCode, d.fipCode]
+});
+
+const fipLookup = new Map(fipTmp);
+//console.log(fipLookup.get("DE"))
+
+
+//Combine arrays with lookups ===================
+
+const houseFip = house.map(d =>{
+  d.party = d.party.substr(0,1).toUpperCase() + d.party.substr(1);
+  d.statName = stateLookup.get(d.stateCode);
+  d.fipCode = fipLookup.get(d.stateCode);
+  return d;
+});
+
+console.log(houseFip);
+
+
+
+
+</script>  
+</body>
+</html>
