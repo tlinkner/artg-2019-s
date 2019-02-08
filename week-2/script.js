@@ -7,8 +7,8 @@ const metadatPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
 
 // combine three Promises. ensures all data is loaded
 Promise.all([
-    migrationDataPromise, 
-    countryCodePromise, 
+    migrationDataPromise,
+    countryCodePromise,
     metadatPromise
   ])
   .then(([migration, countryCode, metadata]) => {
@@ -16,29 +16,29 @@ Promise.all([
       const metadata_tmp = metadata.map(d => {
         return [d.iso_num, d]
       })
-      
+
       const metadataMap = new Map(metadata_tmp);
       const migrationAugmented = migration.map(d => {
-        // look code for origin 
+        // look code for origin
         const origin_code = countryCode.get(d.origin_name);
         const dest_code = countryCode.get(d.dest_name);
         // Go to metadata, look up region
         const origin_metadata = metadataMap.get(origin_code);
         const dest_metadata = metadataMap.get(dest_code);
-        
+
         d.origin_code = origin_code;
         d.dest_code = dest_code;
-        
+
         if(origin_metadata) {
           d.origin_subregion = origin_metadata.subregion;
         }
         if(dest_metadata) {
           d.dest_subregion = dest_metadata.subregion;
         }
-        
+
         return d;
       });
-      
+
       const migrationFiltered = migrationAugmented.filter(d=>d.origin_code ==="840");
 
       const usData = d3.nest()
@@ -52,12 +52,12 @@ Promise.all([
             min: d3.min(yearGroup.values, d => d.value)
           }
         });
-        
+
 //      lineChart(
 //        data, // us data we just filted
 //        d3.select('.module').node() // selection + node
 //      );
-        
+
       // Group by subregion, then by year
       const subregionsData = d3.nest()
         .key(d => d.origin_subregion)
@@ -66,8 +66,8 @@ Promise.all([
         .entries(migrationAugmented);
 
       console.log(subregionsData);
-      
-      d3.select('.main')
+
+      d3.select('.chart-container')
         .selectAll('.chart') // 0 elems
         .data(subregionsData)
         .enter()
@@ -99,7 +99,7 @@ function lineChart(data, rootDOM){
   const margin = {t: 32,r: 32,b: 64, l: 64};
   const innerWidth = W - margin.l - margin.r;
   const innerHeight = H - margin.t - margin.b;
-  
+
 	const scaleX = d3.scaleLinear().domain([1985,2020]).range([0, innerWidth]);
 	const scaleY = d3.scaleLinear().domain([0, 25000000]).range([innerHeight,0]);
 
@@ -108,7 +108,7 @@ function lineChart(data, rootDOM){
     .tickFormat(function(val){
       return "'"+String(val).slice(-2)
     });
-    
+
   const axisY = d3.axisLeft()
     .scale(scaleY)
     .tickSize(-innerWidth)
@@ -134,7 +134,7 @@ function lineChart(data, rootDOM){
     .append('svg')
     .attr('width', W)
     .attr('height', H);
-    
+
   const plot = svg.append('g')
     .attr('transform', `translate(${margin.l}, ${margin.t})`);
 
@@ -156,7 +156,7 @@ function lineChart(data, rootDOM){
     .attr('class','axis-x')
     .attr('transform',`translate(0,${innerHeight})`)
     .call(axisX);
-    
+
   plot.append('g')
     .attr('class','axis-y')
     .call(axisY);
@@ -192,7 +192,7 @@ function parseMigrationData(d){
 	const migrationFlows = [];
 	const dest_name = d['Major area, region, country or area of destination'];
 	const year = +d.Year
-	
+
 	delete d.Year;
 	delete d['Sort order'];
 	delete d['Major area, region, country or area of destination'];
