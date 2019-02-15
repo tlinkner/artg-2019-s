@@ -1,6 +1,6 @@
 import './style.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import {select, max} from 'd3';
+import 'bootstrap/dist/css/bootstrap.css';
+import {select, max, dispatch} from 'd3';
 
 import {
 	migrationDataPromise,
@@ -10,7 +10,29 @@ import {
 import {
 	groupBySubregionByYear
 } from './utils';
-import LineChart from './viewModules/lineChart';
+
+//View modules
+import Composition from './viewModules/Composition';
+import LineChart from './viewModules/LineChart';
+
+
+const globalDispatch = dispatch("change:country");
+
+//Build UI for countryTitle component
+const title = select('.country-view')
+  .insert('h1', '.composition-container')
+  .html('World');
+
+// subscribe
+globalDispatch.on("change:country", (code, display, migrationData) => {
+  title.html(display);
+  renderLineCharts(groupBySubregionByYear(code,migrationData));
+  // Homework: figure out enter/exit/update pattern
+  // renderComposition(migrationData.filter(d=>d.origin_code == code));
+});
+
+
+
 
 Promise.all([
 		migrationDataPromise,
@@ -41,18 +63,18 @@ Promise.all([
 		return d;
 	});
 	
-	//Migration from the US (840) to any other place in the world
-	//filter the larger migration dataset to only the subset coming from the US
-	const data = groupBySubregionByYear("840", migrationAugmented);
+	//Render the view modules
+  globalDispatch.call("change:country",null,"840","World",migrationAugmented);
+  
+//	renderLineCharts(groupBySubregionByYear("840", migrationAugmented));
+//	renderComposition(migrationAugmented.filter(d => d.origin_code === "840"));
 
-	//Render the charts
-	render(data);
 
 	//Build UI for <select> menu
 	const countryList = Array.from(countryCode.entries());
 	const menu = select('.nav')
 		.append('select')
-    .attr("class","form-control form-control-sm")
+		.attr('class','form-control form-control-sm');
 	menu.selectAll('option')
 		.data(countryList)
 		.enter()
@@ -62,41 +84,36 @@ Promise.all([
 
 	//Define behavior for <select> menu
 	menu.on('change', function(){
-
 		const code = this.value; //3-digit code
 		const idx = this.selectedIndex;
 		const display = this.options[idx].innerHTML;
-
-		const data = groupBySubregionByYear(code, migrationAugmented);
-		render(data);
-
+    
+    globalDispatch.call("change:country", null, code, display, migrationAugmented);
+		
+		//Update other components
+//		title.html(display);
+//		renderLineCharts(groupBySubregionByYear(code, migrationAugmented));
 	});
-
 
 });
 
-function render(data){
-  console.log(data);
-  // Find max data for value
-  // 18 arrays, with 7 in each
-  // need to find the max 
-  // collapse
-  
-  const maxValue = max(data.map(subregion => max(subregion.values, d => d.value)));
-  
-  const lineChart = LineChart().maxY(maxValue);
+function renderLineCharts(data){
+
+	//Find max value in data
+	const maxValue = max( data.map(subregion => max(subregion.values, d => d.value)) ) //[]x18
+
+	const lineChart = LineChart()
+		.maxY(maxValue)
+    .on('year:change', year => console.log(year));
     
-  // Update
 	const charts = select('.chart-container')
 		.selectAll('.chart')
-		.data(data, d => d.key); // Match data to the right chart
-  // Enter
+		.data(data, d => d.key);
 	const chartsEnter = charts.enter()
 		.append('div')
 		.attr('class','chart')
-  // Exit
 	charts.exit().remove();
-  // Enter + Update
+
 	charts.merge(chartsEnter)
 		.each(function(d){
 			lineChart(
@@ -104,4 +121,13 @@ function render(data){
 				this
 			);
 		});
+}
+
+function renderComposition(data){
+
+	select('.composition-container')
+		.each(function(){
+			Composition(this, data)
+		});
+
 }

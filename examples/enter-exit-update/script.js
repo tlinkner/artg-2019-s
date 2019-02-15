@@ -8,7 +8,6 @@ const plot3 = d3.select('#plot-3').append('svg').attr('width',w).attr('height',h
 const plot4 = d3.select('#plot-4').append('svg').attr('width',w).attr('height',h);
 
 updatePlot1(generateSimpleData());
-updatePlot2(generateSimpleData());
 updatePlot3(generateNestedData());
 
 //Event listeners
@@ -40,8 +39,6 @@ d3.select('#generate-nested-data-btn')
 	});
 
 function updatePlot1(data){
-
-console.log(data);
 
 	//UPDATE SELECTION
 	const nodes = plot1.selectAll('.node')
@@ -80,46 +77,49 @@ console.log(data);
 }
 
 function updatePlot2(data){
+
+	console.group('Update plot 2');
 	//YOUR CODE HERE
-  console.group("Update plot 2");
-  console.log(data); 
-  
-  // Update: select all nodes
-	const nodesUpdate = plot2.selectAll('.node') // selection size of 0
-		.data(data, d => d.name); // join data points to nodes
-    // second param is key function to match exact nodes. 
-    
-  nodesUpdate.select('circle')
-    .style('fill',"green");
-    
-  // Enter: append based on surplus/deficit
-	const nodesEnter = nodesUpdate.enter()
+	const nodes = plot2.selectAll('.node') //selection of size of 0
+		.data(data, d => d.name); //update selection
+
+	const nodesEnter = nodes.enter()
 		.append('g')
-    .attr('class', 'node'); // !!! Very important for binding
+		.attr('class','node');
 
-  nodesEnter.append('circle');
+	const nodesCombined = nodes.merge(nodesEnter);
 
-  nodesEnter.append('text');
+	const nodesExit = nodes.exit();
 
-  // Enter + Update: attr to existing notes
-  const nodesEnterUpdate = nodesUpdate.merge(nodesEnter)
-    .transition()
-    .attr("transform",d=>`translate(${d.x},${d.y})`);
-    
-  nodesEnterUpdate.select('circle')
-    .attr('r',d=>d.value)
-    .attr('fill','yellow');
-    
-  nodesEnterUpdate.select('text')
-    .text(d=>d.name)
-    .attr("transform","rotate(90)");
+	//nodes selection size?
+	nodes.select('circle')
+		.attr('fill', 'green');
 
-  // Exit: remove
-	const nodesExit = nodesUpdate.exit()
+	nodesExit.select('circle')
+		.attr('fill', 'red');
+
+	nodesEnter
+		.append('circle')
+		.attr('fill','yellow');
+	nodes.merge(nodesEnter)
 		.select('circle')
-		.style('fill','red');
-    
- console.groupEnd(); 
+		.transition()
+		.attr('r', d => d.value)
+
+	nodesEnter
+		.append('text')
+		.attr('text-anchor', 'middle')
+	nodes.merge(nodesEnter)
+		.select('text')
+		.text(d => d.name)
+
+	nodes.merge(nodesEnter)
+		.transition()
+		.attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+
+	console.groupEnd();
+
 }
 
 function updatePlot3(data){
