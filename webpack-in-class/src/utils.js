@@ -1,6 +1,6 @@
-//Utility functions for parsing metadata, migration data, and country code
-//These functions have no dependencies.
+import {nest, sum} from 'd3';
 
+//Utility functions for parsing metadata, migration data, and country code
 function parseMetadata(d){
 	return {
 		iso_a3: d.ISO_A3,
@@ -14,7 +14,6 @@ function parseMetadata(d){
 	}
 }
 
-
 function parseCountryCode(d){
 	return [
 		d['Region, subregion, country or area'],
@@ -22,12 +21,14 @@ function parseCountryCode(d){
 	]
 }
 
-
 function parseMigrationData(d){
+
 	const migrationFlows = [];
 	const dest_name = d['Major area, region, country or area of destination'];
 	const year = +d.Year
+
 	if(+d.Code >= 900 || dest_name === '') return;
+	
 	delete d.Year;
 	delete d['Sort order'];
 	delete d['Major area, region, country or area of destination'];
@@ -35,9 +36,11 @@ function parseMigrationData(d){
 	delete d.Code;
 	delete d['Type of data (a)'];
 	delete d.Total;
+
 	for(let key in d){
 		const origin_name = key;
 		const value = d[key];
+
 		if(value !== '..'){
 			migrationFlows.push({
 				origin_name,
@@ -47,13 +50,27 @@ function parseMigrationData(d){
 			})
 		}
 	}
+
 	return migrationFlows;
 }
 
-// --------------------------------------------------------
+function groupBySubregionByYear(code, migration){
+
+	const filteredData = migration.filter(d => d.origin_code === code);
+
+	const subregionsData = nest()
+		.key(d => d.dest_subregion)
+		.key(d => d.year)
+		.rollup(values => sum(values, d => d.value))
+		.entries(filteredData);
+
+	return subregionsData;
+
+}
 
 export {
-  parseMetadata,
-  parseCountryCode,
-  parseMigrationData
-};
+	parseMigrationData,
+	parseMetadata,
+	parseCountryCode,
+	groupBySubregionByYear
+}
