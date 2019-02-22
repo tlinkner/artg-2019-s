@@ -5,3 +5,4 @@ node_modules/
 .RData
 .Rhistory
 _private/
+.Rproj.user

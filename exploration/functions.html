@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+<script>
+
+function tagger(t){
+  return function(contents){
+    return `<${t}>${contents}</${t}>`;
+  }
+}
+
+console.log(tagger('p')('Bar'));
+
+// equivalen with arraow functions
+const tag = t => contents => `<${t}>${contents}</${t}>`;
+
+console.log(tag('b')('Foo'));
+
+// Does this need babel?
+//const tagomatic = function(t){
+//  console.log(t);
+//  innerFunction(contents){
+//    return contents;
+//  }
+//  return innerFunction;
+//}
+//
+//tagomatic('c');
+
+//function tagomatic(){
+//  let tag;
+//  function exportFunction(contents){
+//    return `<${tag}>${contents}</${tag}>`;
+//  }
+//  exportFunction.tag = function(_){
+//    tag = _;
+//    return this;
+//  }
+//  return exportFunction;
+//}
+//
+//tagomatic.tag("h1");
+//tagomatic("Hi");
+
+</script>  
+</body>
+</html>
