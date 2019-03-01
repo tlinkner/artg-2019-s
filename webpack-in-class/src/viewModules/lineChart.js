@@ -3,11 +3,10 @@ import * as d3 from 'd3';
 function LineChart(){
 
 	let maxY;
-  
-  const bisect = d3.bisector(d => d.key).right; // this gives us a function
-  let cb;
+	const bisect = d3.bisector(d => d.key).right; //this will give us a function
+	let yearChangeCallBack; // global scope of the function
 
-	function exportFunction(data, rootDOM){
+	function exportFunction(data, rootDOM, key){
 
 		const W = rootDOM.clientWidth;
 		const H = rootDOM.clientHeight;
@@ -36,16 +35,28 @@ function LineChart(){
 			.tickSize(-innerWidth)
 			.ticks(3)
 
+		//Build DOM structure
 		const svg = d3.select(rootDOM)
 			.classed('line-chart',true)
+			.style('position','relative') //necessary to position <h3> correctly
 			.selectAll('svg')
-			.data([1]) // hack: want to use a version of enter/exit/update
-      // so never more than one of these drawn
+			.data([1])
 		const svgEnter = svg.enter()
 			.append('svg');
 		svg.merge(svgEnter)
 			.attr('width', W)
 			.attr('height', H);
+
+		const title = d3.select(rootDOM)
+			.selectAll('h3')
+			.data([1]);
+		const titleEnter = title.enter()
+			.append('h3')
+			.style('position','absolute')
+			.style('left',`${margin.l}px`)
+			.style('top',`0px`)
+		title.merge(titleEnter)
+			.html(key);
 
 		//Append rest of DOM structure in the enter selection
 		const plotEnter = svgEnter.append('g')
@@ -64,16 +75,17 @@ function LineChart(){
 			.attr('transform',`translate(0, ${innerHeight})`)
 		plotEnter.append('g')
 			.attr('class','axis axis-y')
-    plotEnter.append('rect')
-      .attr('class','mousetarget')
-      .attr('width',innerWidth)
-      .attr('height',innerHeight)
-      .style('opacity',0.01);
-    const tooltipEnter = plotEnter.append('g')
-      .attr('class','tool-tip');
-    tooltipEnter.append('circle').attr('r',3);
-    tooltipEnter.append('text')
-      .attr('dy',-10);
+		const tooltipEnter = plotEnter.append('g')
+			.attr('class','tool-tip')
+			.style('opacity',0)
+		tooltipEnter.append('circle').attr('r',3)
+		tooltipEnter.append('text').attr('text-anchor','middle')
+			.attr('dy', -10)
+		plotEnter.append('rect')
+			.attr('class','mouse-target')
+			.attr('width', innerWidth)
+			.attr('height', innerHeight)
+			.style('opacity', 0.01)
 
 		//Update the update + enter selections
 		const plot = svg.merge(svgEnter).select('.plot');
@@ -92,38 +104,34 @@ function LineChart(){
 		plot.select('.axis-y')
 			.transition()
 			.call(axisY);
-      
-      
-    // Event handline
-    
-    plot
-      .select('.area')
-      .on("mouseenter", function(d){
-  //      console.log("mouseenter");
-      })
-      .on("mousemove",function(d){
-  //      console.log(this);
-  //      console.log(d); // the hack. see line 39
-        const mouse = d3.mouse(this);
-        const mouseX = mouse[0];
-        const year = scaleX.invert(mouseX);
-        const idx = bisect(data, year); // number is the index
-        const datum = data[idx];
-        
-        console.log(data[idx]); 
-        
-        plot.select('.tool-tip')
-          .attr('transform',`translate(${scaleX(datum.key)}, ${scaleY(datum.value)})`)
-          .select('text')
-          .text(datum.value);
+
+		//Event handling
+		plot
+			.select('.mouse-target')
+			.on('mouseenter', function(d){
+				plot.select('.tool-tip')
+					.style('opacity',1)
+			})
+			.on('mousemove', function(d){
+				const mouse = d3.mouse(this);
+				const mouseX = mouse[0];
+				const year = scaleX.invert(mouseX);
+				
+				const idx = bisect(data, year);
+				const datum = data[idx]; // year and value
+
+				plot.select('.tool-tip')
+					.attr('transform', `translate(${scaleX(datum.key)}, ${scaleY(datum.value)})`)
+					.select('text')
+					.text(datum.value);
           
-          cb(dataum.key);
-        
-      })
-      .on("mouseleave", function(d){
-  //      console.log("mouseleave");
-      });
-    
+          yearChangeCallBack(datum.key);
+          
+			})
+			.on('mouseleave', function(d){
+				plot.select('.tool-tip')
+					.style('opacity',0)
+			});
 
 	}
 
@@ -132,10 +140,10 @@ function LineChart(){
 		return this;
 	}
 
-  exportFunction.on = function(event, callback) {
-    cb = callback;
-    return this;
-  }
+	exportFunction.onChangeYear = function(callback){
+    yearChangeCallBack = callback; // can use anywhere in the module, whatever function you pass in
+		return this;
+	}
 
 	return exportFunction;
 
