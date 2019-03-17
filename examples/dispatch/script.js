@@ -1,92 +1,72 @@
+const redSquare = d3.select('.main')
+	.append('div')
+	.attr('class','square')
+	.style('background','red')
+	.datum({key:4})
 
+redSquare
+	.on('click', function(d){
+		//"event listener"
+		console.log('Red square is clicked');
+		console.log(this); //"this" --> context of the function --> "owner" of the function
+		console.log(d);
+		console.log(d3.event);
+	});
 
-const redSquare  = d3.select('.main')
-  .append('div')
-  .classed('square',true)
-  .style('background','red')
-  .datum({key:4});
+//Create a dispatch object
+//it's going to handle the "change color" event
+const dispatch = d3.dispatch("change:color", "update:position")
 
-// binding an even listener to a particular event
-redSquare.on('click',function(d){
-    console.log("Red square is clicked");
-    console.log(this); // context
-    d3.select(this).style('background','lime');
-    console.log(d); // data bound tot he object
-  });
-  
-  
-const blueSquare = d3.select('.main')
-  .append('div')
-  .classed('square',true)
-  .style('background','blue')
-  .on("click",d =>{
-    console.log("Blue square is clicked");
-    // ! one difference between arrow function ad normal, value of this is diffrent.
-    console.log(this);
-  });
-  
+for(let i = 0; i < 10; i++){
+	const randomColor = `rgb(${255*Math.random()}, ${255*Math.random()}, ${255*Math.random()})`
 
-const yellowSquare = redSquare
-  .append('div')
-  .classed('square',true)
-  .style('background','yellow')
-  .on("click",d =>{
-    console.log("Yellow square is clicked");
-    d3.event.stopPropagation();
-    console.log(this);
-    console.log(d3.event);
-  });
-  
-  
-// create a dispatch object
-//  to handle change color event
-// can have any number of events
-const dispatch = d3.dispatch("change:color")
+	const square = d3.select('.main')
+		.append('div')
+		.attr('class','square')
+		.style('background', randomColor)
+		.on('click', () => dispatch.call("change:color", null, randomColor));
 
-dispatch.on("change:color", function(color){
-  console.log(color);
-})
-
-  
-
-for (let i=0; i < 10; i++) {
-  const randomColor = `rgb(`
-    + `${Math.round(Math.random()*255)},`
-    + `${Math.round(Math.random()*255)},`
-    + `${Math.round(Math.random()*255)})`;
-  const square = d3.select('.main')
-    .append('div')
-    .classed('square',true)
-    .style('background',randomColor)
-    // second arg is the context
-    .on('click',d => dispatch.call("change:color", null ,randomColor))
-    
-//  dispatch.on("change:color."+i,function(color){
-//    console.log("SQ Dispatch Func");
-//    square.style("background",color);
-//  });
-    
-//    .on('click',function(d){ 
-//      // need awareness that others exist
-//      // what if are no ther squares?
-//      // makes a strong assumptin about what is on the page
-//      d3.selectAll('.square').style('background',randomColor)
-//    })
+	dispatch.on('change:color.'+i, function(color){
+		console.log('change color');
+		square.style('background', color);
+	});
 }
 
-// Also works
-dispatch.on("change:color."+"foo",function(color){
-  d3.selectAll('.square').style("background",color);
-});
+dispatch.on('change:color', function(color){
+	console.log(color);
+})
 
+//Second example, demonstrating the necessity of the dispatch pattern
+const svg = d3.select('.main')
+	.append('svg')
+	.attr('width',960)
+	.attr('height',600)
+	.style('padding',0)
+	.style('margin',0);
 
+const btn = d3.select('.main')
+	.insert('button','svg')
+	.on('click', () => generateNewShape(svg))
+	.html('Add new shape');
 
+function generateNewShape(rootDOM){
+	const color = `rgb(${255*Math.random()}, ${255*Math.random()}, ${255*Math.random()})`;
+	const x = Math.random()*960;
+	const y = Math.random()*600;
+	let el;
 
+	if(Math.random()>.5){
+		el = rootDOM.append('circle')
+			.attr('r',10)
+			.style('fill',color);
+	}else{
+		el = rootDOM.append('rect')
+			.attr('width',20)
+			.attr('height',20)
+			.style('fill',color);
+	}
+	el.attr('transform', `translate(${x},${y})`)
+		.on('click', () => dispatch.call("change:color",null,color));
+	dispatch.on('change:color.'+Math.floor(Math.random()*10000), color => el.style('fill', color));
 
-//d3.selectAll('.square')
-//  .on('click',function(d){
-//    d3.select('square').style();
-//  
-//  });
-
-
+}
