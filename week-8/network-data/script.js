@@ -1,4 +1,4 @@
- //Dispatch
+//Dispatch
 const dispatch = d3.dispatch('update:force');
 
 //dat.gui library for displaying UI
@@ -34,172 +34,153 @@ const plot1 = d3.select('#plot-1').append('svg').attr('width',w).attr('height',h
 const migrationDataPromise = d3.csv('../../data/un-migration/Table 1-Table 1.csv', parseMigrationData)
 	.then(data => data.reduce((acc,v) => acc.concat(v), []));
 
+migrationDataPromise.then(data => {
+	const {nodesData, linksData} = generateNetwork(data, 1990);
 
-migrationDataPromise.then(data=>{
-  // object de-structuring: two objects coming out
-  // similar to module import/export
-  // can only return one object, this breaks them apart
-  const {nodesData,linksData} = generateNetwork(data,1990);
-  
-  nodesData.forEach(d=>{
-    d.x = Math.random()*w;
-    d.y = Math.random()*h;
-  })
-  
-  const nodes = plot1.selectAll('.node')
-    .data(nodesData);
-  const nodesEnter = nodes.enter()
-    .append('g')
-    .attr('class','node');
-  nodesEnter.append('circle')
-    .attr('r',5)
-    .style('fill-opacity',0.1)
-    .style('stroke','#333')
-    .style('stroke-width','2px');
-  nodes.merge(nodesEnter)
-    .attr('transform',d=>`translate(${d.x},${d.y})`)
-    
-  const links = plot1.selectAll('.link')
-    .data(linksData);
-  const linksEnter = links.enter()
-    .append('line')
-    .attr('class','link')
-    .style('stroke-width','1px')
-    .style('stroke','black')
-    .style('stroke-opacity',0.05);
-  links.merge(linksEnter)
-    .attr('x1',d=>d.source.x)
-    .attr('y1',d=>d.source.y)
-    .attr('x2',d=>d.target.x)
-    .attr('y2',d=>d.target.y);
-    
-    
-  // Force layout operates on arrays
-  const simulation = d3.forceSimulation();
-  // Define some forces
-  const forceX = d3.forceX().x(d=>{
-    if (d.outgoingTotal > d.incomingTotal) {
-      return w * 1/4;
-    } else {
-      return w * 3/4;
-    }
-  }); // pull to center
-  const forceY = d3.forceY().y(h/2); // pull to center
-  const forceCollide = d3.forceCollide().radius(7); // radius for boundary
-  const forceLink = d3.forceLink().links(linksData); 
-  
-  simulation
-    .force('x',forceX)
-    .force('y',forceY)
-    .force('collide',forceCollide)
-    .force('link',forceLink)
-    .nodes(nodesData) // simulation subject: the data // starts the simulation
-    .on('tick',()=>{
-        // only changing the data, not the dom
-        // update the dom
-        // alpha(), runs out of fuel
-        nodes.merge(nodesEnter)
-          .attr('transform',d=>`translate(${d.x},${d.y})`)
-          // no transitinos needed because 300 times
-        links.merge(linksEnter)
-          .attr('x1',d=>d.source.x)
-          .attr('y1',d=>d.source.y)
-          .attr('x2',d=>d.target.x)
-          .attr('y2',d=>d.target.y);
-    })
-    .alpha(1);
-    
-  dispatch.on('update:force', (params)=>{
-    if (params.useForceX) {
-      simulation
-        .force('x',forceX)
-        .alpha(1)
-        .restart();
-      console.log(simulation.alpha());
-    } else {
-      simulation
-        .force('x',null)
-        .alpha(1)
-        .restart();
-    }
-  });
- 
-  
+	nodesData.forEach(d => {
+		d.x = Math.random()*w;
+		d.y = Math.random()*h;
+	});
+
+	const nodes = plot1.selectAll('.node')
+		.data(nodesData);
+	const nodesEnter = nodes.enter()
+		.append('g').attr('class','node');
+	nodesEnter.append('circle').attr('r', 5)
+		.style('fill-opacity',.1)
+		.style('stroke','#333')
+		.style('stroke-width','2px');
+	nodes.merge(nodesEnter)
+		.attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+	const links = plot1.selectAll('.link')
+		.data(linksData);
+	const linksEnter = links.enter()
+		.append('line').attr('class','link')
+		.style('stroke-opacity',0.02)
+		.style('stroke-width','1px')
+		.style('stroke','black');
+	links.merge(linksEnter)
+		.attr('x1', d => d.source.x)
+		.attr('y1', d => d.source.y)
+		.attr('x2', d => d.target.x)
+		.attr('y2', d => d.target.y);
+
+	//Create a force simulation
+	const simulation = d3.forceSimulation();
+
+	//Define some forces
+	const forceX = d3.forceX().x(d => {
+		if(d.outgoingTotal > d.incomingTotal){
+			return w/4
+		}else{
+			return w*3/4
+		}
+	});
+	const forceY = d3.forceY().y(h/2)
+	const forceCollide = d3.forceCollide().radius(8);
+	const forceLink = d3.forceLink().links(linksData);
+
+	simulation
+		.force('x', forceX)
+		.force('y', forceY)
+		.force('collide', forceCollide)
+		//.force('link', forceLink)
+		.nodes(nodesData) //start the simulation
+		.on('tick', () => {
+			nodes.merge(nodesEnter)
+				.attr('transform', d => `translate(${d.x}, ${d.y})`);
+			links.merge(linksEnter)
+				.attr('x1', d => d.source.x)
+				.attr('y1', d => d.source.y)
+				.attr('x2', d => d.target.x)
+				.attr('y2', d => d.target.y);
+		})
+		.alpha(1);
+
+	dispatch.on('update:force', params => {
+		if(params.useForceX){
+			simulation
+				.force('x', forceX)
+				.alpha(1)
+				.restart();
+		}else{
+			simulation
+				.force('x', null)
+				.alpha(1)
+				.restart();
+		}
+	});
+
+
 });
 
 //Converts origin destination flows to nodes and links
 function generateNetwork(data, year){
 
-    let filteredData = data.filter(d => d.year === year);
+	let filteredData = data.filter(d => d.year === year);
 
-    const nodesData = new Map();
-    const linksData = [];
+	const nodesData = new Map();
+	const linksData = [];
 
-    filteredData.forEach(od => {
+	filteredData.forEach(od => {
 
-        const newLink = {
-            value: od.value,
-            source: null,
-            target: null
-        };
+		const newLink = {
+			value: od.value,
+			source: null,
+			target: null
+		};
 
-        //check to see if node is already in the nodesData map
-        if(!nodesData.get(od.origin_name)){
-            //make a new node
-            const newNode = {
-                name: od.origin_name,
-                incoming: [],
-                outgoing: [newLink],
-                incomingTotal: 0,
-                outgoingTotal: newLink.value
-            };
+		//check to see if node is already in the nodesData map
+		if(!nodesData.get(od.origin_name)){
+			//make a new node
+			const newNode = {
+				name: od.origin_name,
+				incoming: [],
+				outgoing: [newLink],
+				incomingTotal: 0,
+				outgoingTotal: newLink.value
+			};
 
-            nodesData.set(od.origin_name, newNode);
-            newLink.source = newNode;
-        }else{
-            //if node is already present in the map
-            const existingNode = nodesData.get(od.origin_name);
+			nodesData.set(od.origin_name, newNode);
+			newLink.source = newNode;
+		}else{
+			//if node is already present in the map
+			const existingNode = nodesData.get(od.origin_name);
 
-            existingNode.outgoing.push(newLink);
-            existingNode.outgoingTotal += newLink.value;
-            newLink.source = existingNode;
-        }
+			existingNode.outgoing.push(newLink);
+			existingNode.outgoingTotal += newLink.value;
+			newLink.source = existingNode;
+		}
 
-        if(!nodesData.get(od.dest_name)){
-            const newNode = {
-                name: od.dest_name,
-                incoming: [newLink],
-                outgoing: [],
-                incomingTotal: newLink.value,
-                outgoingTotal: 0
-            };
+		if(!nodesData.get(od.dest_name)){
+			const newNode = {
+				name: od.dest_name,
+				incoming: [newLink],
+				outgoing: [],
+				incomingTotal: newLink.value,
+				outgoingTotal: 0
+			};
 
-            nodesData.set(od.dest_name, newNode);
-            newLink.target = newNode;
-        }else{
-            const existingNode = nodesData.get(od.dest_name);
-            existingNode.incoming.push(newLink);
-            existingNode.incomingTotal += newLink.value;
-            newLink.target = existingNode;
-        }
+			nodesData.set(od.dest_name, newNode);
+			newLink.target = newNode;
+		}else{
+			const existingNode = nodesData.get(od.dest_name);
+			existingNode.incoming.push(newLink);
+			existingNode.incomingTotal += newLink.value;
+			newLink.target = existingNode;
+		}
 
-        linksData.push(newLink);
+		linksData.push(newLink);
 
-    });
+	});
 
-  // convert map to simple list of values
-  // shows unique list of all the countries
-  // console.log(Array.from(nodesData.values()));
-  // console.log(linksData);
-  
-  return {
-    nodesData: Array.from(nodesData.values()),
-    linksData: linksData
-  }
+	return {
+		nodesData: Array.from(nodesData.values()),
+		linksData: linksData
+	}
 
 }
-
-
 
 
 function parseMigrationData(d){

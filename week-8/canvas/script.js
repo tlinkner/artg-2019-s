@@ -19,7 +19,7 @@ const plot2Canvas = d3.select('#plot-2')
 	.style('left',0);
 
 //Dummy data
-const NUM_NODES = 1000;
+const NUM_NODES = 10000;
 const nodesData = Array.from({length:NUM_NODES}).map(d => {
 	return {
 		x: Math.random()*w,
@@ -32,75 +32,61 @@ const nodesData = Array.from({length:NUM_NODES}).map(d => {
 });
 
 //EXERCISE 1: Draw basic shapes
-// grab a pen for the canvas: the drawing context of the canvas elem
-
-const ctx1 = plot1Canvas.node().getContext('2d'); // d3 selection
+//Access the drawing context of the canvas element; "drawing context" == "pen"
+const ctx1 = plot1Canvas.node().getContext('2d');
 
 //Drawing shapes 
 //Rect
-ctx1.fillStyle = "red";
+ctx1.fillStyle = 'rgb(255,0,0)';
 ctx1.fillRect(0,0,w/2,h/2);
-ctx1.fillStyle = "white";
+ctx1.fillStyle = 'white';
 ctx1.fillRect(0,0,w,h);
-ctx1.stokeStyle = "black";
+ctx1.strokeStyle = 'black';
 ctx1.strokeRect(0,0,w/2,h/2);
 
-// enter exit update doesnt work
-
 //Path
-ctx1.beginPath() // 1
-
-//path methods
-//ctx.moveTo()
-ctx1.moveTo(w/2,h/2); // 2
-ctx1.lineTo(w,h/2)
-ctx1.lineTo(w/2,h);
-
-// moving line is also your new starting point
-
-ctx1.closePath() // 3
-ctx1.fillStyle = "blue";
-ctx1.fill(); // 4
-
-ctx1.closePath()
-
-
+//Triangle
 ctx1.beginPath();
-ctx1.moveTo(w/2+50,h/2);
-ctx1.arc(w/2,h/2,50,0,Math.PI * 2) // x, y, r, arc degree in RAD
+
+ctx1.moveTo(w/2, h/2);
+ctx1.lineTo(w, h/2);
+ctx1.lineTo(w/2, h);
+
 ctx1.closePath();
-ctx1.fillStyle = "pink";
-ctx1.stokeStyle = "red";
-ctx1.stroke();
+ctx1.fillStyle = 'yellow';
 ctx1.fill();
 
-//ctx.lineTo()
-//ctx.arc()
-//ctx.quadraticCurveTo()
-//ctx.bezierCurveTo()
-
-
+//Circle
 ctx1.beginPath();
-ctx1.moveTo(0,h);
-ctx1.quadraticCurveTo(w/2,h/2,w,h);
+
+ctx1.moveTo(w/2+50, h/2);
+ctx1.arc(w/2,h/2,50,0,Math.PI*2);
+
 ctx1.closePath();
-ctx1.strokeStyle = "red";
+ctx1.fillStyle = 'green';
+ctx1.strokeStyle = 'red';
 ctx1.stroke();
 
+//Arbitrary shape
+ctx1.beginPath();
 
-//nodesData.forEach(d=>{
-//  ctx1.beginPath();
-//  ctx1.moveTo(d.x,d.y);
-//  ctx1.arc(d.x,d.y,d.r,0,Math.PI*2);
-//  ctx1.closePath();
-//  ctx1.fillStyle = d.color;
-//  ctx1.fill();
-//})
+ctx1.moveTo(0, h);
+ctx1.quadraticCurveTo(w/2, h/2, w, h);
 
+ctx1.closePath();
+ctx1.fillStyle = 'purple';
+ctx1.fill();
 
+nodesData.forEach(d => {
+	ctx1.beginPath();
 
-//ctx.stroke()
-//ctx.fill()
+	ctx1.moveTo(d.x, d.y);
+	ctx1.arc(d.x, d.y, d.r, 0, Math.PI*2);
+
+	ctx1.closePath();
+	ctx1.fillStyle = d.color;
+	ctx1.fill();
+});
 
 //EXERCISE 2: use d3.path() to render path commands to <svg>
 
@@ -109,36 +95,39 @@ renderFrame();
 
 function renderFrame(){
 
-  ctx1.fillStyle = "white";
-  ctx1.fillRect(0,0,w,h);
-  
-  console.log('t');
+	ctx1.fillStyle = 'white';
+	ctx1.fillRect(0,0,w,h);
 
-  // update nodesdata slightly
-  nodesData.forEach(d=>{
-    d.x += d.vx;
-    d.y += d.vy;
-    
-    if(d.x < 0) {d.x = w;}
-    if(d.x > w) {d.x = 0;}
-    if(d.y < 0) {d.y = h;}
-    if(d.y > h) {d.y = 0;}
-    
-    ctx1.beginPath();
-    ctx1.moveTo(d.x,d.y);
-    ctx1.arc(d.x,d.y,d.r,0,Math.PI*2);
-    ctx1.closePath();
-    ctx1.fillStyle = d.color;
-    ctx1.fill();
-    
-  });
-  
-  //
-  
-    
-  requestAnimationFrame(renderFrame); // calling function within itself
-  // looping over this function repeatedly without stopping
-  // special JS function for painting and call the next screen
+	//update nodesData slightly
+	nodesData.forEach(d => {
+		d.x += d.vx;
+		d.y += d.vy;
+
+		if(d.x < 0){
+			d.x = w;
+		}
+		if(d.x > w){
+			d.x = 0;
+		}
+		if(d.y < 0){
+			d.y = h;
+		}
+		if(d.y > h){
+			d.y = 0;
+		}
+
+		ctx1.beginPath();
+
+		ctx1.moveTo(d.x, d.y);
+		ctx1.arc(d.x, d.y, d.r, 0, Math.PI*2);
+
+		ctx1.closePath();
+		ctx1.fillStyle = d.color;
+		ctx1.fill();
+
+	});
+
+	requestAnimationFrame(renderFrame);
 
 }
 
