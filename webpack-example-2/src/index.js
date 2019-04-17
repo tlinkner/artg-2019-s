@@ -10,7 +10,7 @@ import * as d3 from 'd3'
 // Import individual modules
 import dataPromise from './data';
 import layoutControls from './modules/layoutControls';
-import colorControls from './modules/layoutControls';
+import colorControls from './modules/colorControls';
 import forceGraph from './modules/forceGraph';
 
 // Create global dispatch object
