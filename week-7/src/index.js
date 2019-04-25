@@ -5,12 +5,6 @@ import Cartogram from './viewModules/Cartogram';
 
 
 
-// width
-// height
-// Year
-
-
-
 // ----------------------------------------------
 
 const globalDispatch = d3.dispatch("change:year");
@@ -85,9 +79,13 @@ Promise.all([migrationDataPromise,countryCodePromise,metadataPromise])
 // ----------------------------------------------
 
 function renderCartogram(data){
+  const cartogram = Cartogram()
+    .width(800)
+    .height(600);
+
 	d3.select('.cartogram-container')
 		.each(function(){
-			Cartogram(this, data);
+			cartogram(this, data);
 		});
 }
 
