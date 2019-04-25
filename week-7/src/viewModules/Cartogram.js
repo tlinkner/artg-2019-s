@@ -1,47 +1,19 @@
-import {nest, select, geoMercator, max, scaleSqrt} from 'd3';
+import * as d3 from "d3";
 
-//API reference for force layout
-//https://github.com/d3/d3-force
+export default function drawCartogram(rootDom, data){
 
-export default function Cartogram(rootDOM, data){
+	const w = rootDom.clientWidth;
+	const h = rootDom.clientHeight;
 
-	//Internal variables
-	const W = rootDOM.clientWidth;
-	const H = 600;
-	const margin = {t:64, r:64, b:64, l:64};
-	const w = W - margin.l - margin.r;
-	const h = H - margin.t - margin.b;
-	const YEAR = 2017;
-	const scaleSize = scaleSqrt().range([3,100]);
+	const projection = d3.geoMercator()
+		.translate([w/2, h/2])
+		.scale(180);
 
-	//Data restructuring
-	let dataMap = nest()
-		.key(d => d.year)
-		.entries(data)
-		.map(d => [+d.key, d.values]);
-	dataMap = new Map(dataMap);
-	let dataByYear = dataMap.get(YEAR);
-	//Discover max value to set the size of circles
-	const maxValue = max(dataByYear, d => d.value);
-	scaleSize.domain([0, maxValue]);
+	const scaleSize = d3.scaleSqrt()
+		.domain([0,d3.max(data,d=>d.value)])
+		.range([5,30]);
 
-	//Layout function:
-	//Use geographic representation for cartogram
-	const projection = geoMercator()
-		.translate([w/2, h/2]);
-
-	//Transform data again, this time giving each data point an xy coordinate
-	dataByYear = dataByYear.map(d => {
-		const xy = d.dest_lngLat?projection(d.dest_lngLat):[w/2,h/2];
-		d.x = xy[0];
-		d.y = xy[1];
-		return d;
-	});
-  
-  console.log(dataByYear);
-
-	//Append DOM elements
-	const svg = select(rootDOM)
+	const svg = d3.select(rootDom)
 		.classed('cartogram',true)
 		.selectAll('svg')
 		.data([1]);
@@ -51,36 +23,45 @@ export default function Cartogram(rootDOM, data){
 		.append('g').attr('class','plot');
 
 	const plot = svg.merge(svgEnter)
-		.attr('width', W)
-		.attr('height', H)
-		.select('.plot')
-		.attr('transform', `translate(${margin.l}, ${margin.t})`);
+		.attr('width', w)
+		.attr('height', h)
+		.select('.plot');
 
-	const nodes = plot.selectAll('.node')
-		.data(dataByYear, d => d.dest_code);
-
-	nodes.exit().remove();
+	const nodes = plot.selectAll(".node")
+		.data(data, d=>d.key);
 
 	const nodesEnter = nodes.enter()
-		.append('g').attr('class','node')
-		.attr('transform', d => `translate(${d.x}, ${d.y})`);
-	nodesEnter.append('circle')
-		.attr('stroke','#333')
-		.attr('stroke-width','1px')
-		.attr('fill-opacity',.1);
-	nodesEnter.append('text')
-		.attr('text-anchor','middle');
-	const nodesCombined = nodes.merge(nodesEnter);
-	nodesCombined
-		//.transition()
-		.attr('transform', d => `translate(${d.x}, ${d.y})`);
-	nodesCombined
-		.select('circle')
-		.transition()
-		.attr('r', d => scaleSize(d.value));
-	nodesCombined
-		.select('text')
-		.filter(d => scaleSize(d.value)>30)
-		.text(d => d.dest_name);
+		.append("g")
+		.attr("class","node");
+
+	nodesEnter.append("circle");
+
+	nodesEnter.append("text")
+		.attr("text-anchor","middle");
+
+	nodes.merge(nodesEnter)
+		.filter(d=>d.dest_lngLat)
+		.attr("transform",d=>{
+			const xy = projection(d.dest_lngLat);
+			return `translate(${xy[0]}, ${xy[1]})`;
+		})
+
+	nodes.merge(nodesEnter)
+		.select("circle")
+		.attr("r", d => scaleSize(d.value))
+		.style("fill-opacity", .03)
+		.style("stroke", "black")
+		.style("stroke-width", "1px")
+		.style("stroke-opacity", 0.3)
+
+	nodes.merge(nodesEnter)
+		.select("text")
+		.attr("y", d => -scaleSize(d.value))
+		.filter(d => d.value > 1000000)
+		.text(d => d.key)
+		.style("font-family", "sans-serif")
+		.style("font-size", "10px")
+		
+	nodes.exit().remove();
 
 }

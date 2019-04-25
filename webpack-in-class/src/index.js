@@ -32,7 +32,7 @@ globalDispatch.on('change:country', (code, displayName, migrationData) => {
 });
 
 globalDispatch.on('change:year', year => {
-  console.log('globalDispatch:'+year);
+//  console.log('globalDispatch:'+year);
 });
 
 Promise.all([
@@ -65,6 +65,8 @@ Promise.all([
 
 			return d;
 		});
+		
+		console.log(migrationAugmented);
 	
 		//Render the view modules
 		globalDispatch.call('change:country',null,"840","World",migrationAugmented);

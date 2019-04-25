@@ -4,7 +4,6 @@ const countryCodePromise = d3.csv('../data/un-migration/ANNEX-Table 1.csv', pars
 	.then(data => new Map(data));
 const metadataPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
 
-
 //Import all data via parallel promises
 Promise.all([
 		migrationDataPromise,
@@ -17,7 +16,7 @@ Promise.all([
 		//Convert metadata to a metadata map
 		const metadata_tmp = metadata.map(d => [d.iso_num, d]);
 		const metadataMap = new Map(metadata_tmp);
-		
+
 		//Let's pick a year, say 2000, and filter the migration data
 		const migration_2000 = migration.filter(d => d.year === 2000);
 		// console.log(migration_2000);
@@ -34,7 +33,7 @@ Promise.all([
           total: d3.sum(originGroup.values, d => d.value)
         }
       });
-      
+
     // console.log(migration_origin_by_country);
 
 		//YOUR CODE HERE
@@ -52,7 +51,7 @@ Promise.all([
 			} else {
 				// console.log(`Metadata for ${d.key} code ${code} not found`);
 			}
-				return d;		
+				return d;
 		}).filter(d=>"code" in d)
 
 		//REPRESENT
@@ -65,8 +64,8 @@ Promise.all([
 //Some of the functions related to geographic representation have already been implemented, so feel free to use them
 function drawCartogram(rootDom, data){
 
-	// console.log(data)
-	
+	console.log(data)
+
 	//measure the width and height of the rootDom element
 	const w = rootDom.clientWidth;
 	const h = rootDom.clientHeight;
@@ -89,26 +88,26 @@ function drawCartogram(rootDom, data){
 		.attr("width",w)
 		.attr("height",h)
 		.append("g");
-		
+
 	const nodes = plot.selectAll(".node")
 		.data(data, d=>d.key);
-		
+
 	const nodesEnter = nodes.enter()
 		.append("g")
 		.attr("class","node");
-	
+
 	nodesEnter.append("circle");
-	
+
 	nodesEnter.append("text")
 		.attr("text-anchor","middle");
-		
+
 	nodes.merge(nodesEnter)
 		.filter(d=>d.lngLat)
 		.attr("transform",d=>{
 			const xy = projection(d.lngLat);
 			return `translate(${xy[0]}, ${xy[1]})`;
 		})
-		
+
 	nodes.merge(nodesEnter)
 		.select("circle")
 		.attr("r", d => scaleSize(d.total))
@@ -116,7 +115,7 @@ function drawCartogram(rootDom, data){
 		.style("stroke", "black")
 		.style("stroke-width", "1px")
 		.style("stroke-opacity", 0.3)
-	
+
 	nodes.merge(nodesEnter)
 		.select("text")
 		.attr("y", d => -scaleSize(d.total))
@@ -154,7 +153,7 @@ function parseMigrationData(d){
 	const migrationFlows = [];
 	const dest_name = d['Major area, region, country or area of destination'];
 	const year = +d.Year
-	
+
 	delete d.Year;
 	delete d['Sort order'];
 	delete d['Major area, region, country or area of destination'];

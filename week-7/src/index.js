@@ -1,47 +1,57 @@
 import './style.css';
-import 'bootstrap/dist/css/bootstrap.css';
-import {select, max, dispatch} from 'd3';
-
-import {
-	migrationDataPromise,
-	countryCodePromise,
-	metadataPromise
-} from './data';
-import {
-	groupBySubregionByYear
-} from './utils';
-
-//View modules
-import Composition from './viewModules/Composition';
-import LineChart from './viewModules/LineChart';
+import * as d3 from "d3";
+import {migrationDataPromise,countryCodePromise,metadataPromise} from './data';
 import Cartogram from './viewModules/Cartogram';
 
-//Create global dispatch object
-const globalDispatch = dispatch("change:country", "change:year");
 
-//Build UI for countryTitle component
-const title = select('.country-view')
+
+// width
+// height
+// Year
+
+
+
+// ----------------------------------------------
+
+const globalDispatch = d3.dispatch("change:year");
+
+const title = d3.select('.page-title')
 	.insert('h1', '.cartogram-container')
-	.html('World');
+	.html('...');
 
-globalDispatch.on('change:country', (code, displayName, migrationData) => {
-	title.html(displayName);
-	renderLineCharts(groupBySubregionByYear(code, migrationData));
-	renderComposition(migrationData.filter(d => d.origin_code === code), 2017);
-	renderCartogram(migrationData.filter(d => d.origin_code === code));
+globalDispatch.on('change:year', (data, year) => {
+	title.html(year);
+	const filteredData = data.filter( d=>d.year===+year);
+	renderCartogram(filteredData);
 });
 
-globalDispatch.on('change:year', year => {
-  console.log('globalDispatch:'+year);
-});
 
-Promise.all([
-		migrationDataPromise,
-		countryCodePromise,
-		metadataPromise
-	])
+
+// ----------------------------------------------
+
+Promise.all([migrationDataPromise,countryCodePromise,metadataPromise])
 	.then(([migration, countryCode, metadataMap]) => {
 
+		// year menu
+		const years = d3.nest()
+			.key(d=>d.year)
+			.entries(migration)
+			.map(d=>{
+				if (d.key > 0){return d.key}
+			});
+			
+		const menu = d3.select('.nav').append('select');
+		menu.selectAll('option')
+			.data(years)
+			.enter()
+			.append('option')
+			.attr('value', d => d)
+			.html(d => d);
+		menu.on('change', function(){
+			globalDispatch.call('change:year',null,migrationAugmented,this.value);
+		});
+		
+		// prep data
 		const migrationAugmented = migration.map(d => {
 
 			const origin_code = countryCode.get(d.origin_name);
@@ -65,73 +75,20 @@ Promise.all([
 
 			return d;
 		});
-	
-		//Render the view modules
-		globalDispatch.call('change:country',null,"840","World",migrationAugmented);
 
-		//Build UI for <select> menu
-		const countryList = Array.from(countryCode.entries());
-		const menu = select('.nav')
-			.append('select')
-			.attr('class','form-control form-control-sm');
-		menu.selectAll('option')
-			.data(countryList)
-			.enter()
-			.append('option')
-			.attr('value', d => d[1])
-			.html(d => d[0]);
-
-		//Define behavior for <select> menu
-		menu.on('change', function(){
-			const code = this.value; //3-digit code
-			const idx = this.selectedIndex;  
-			const display = this.options[idx].innerHTML;
-
-			globalDispatch.call('change:country',null,code,display,migrationAugmented);
-		});
-
+		// initial render view modules
+		globalDispatch.call('change:year',null,migrationAugmented,1990);
 });
 
-function renderLineCharts(data){
-	//Find max value in data
-	const maxValue = max( data.map(subregion => max(subregion.values, d => d.value)) ) //[]x18
 
-	const lineChart = LineChart()
-		.maxY(maxValue)
-		.onChangeYear(year => globalDispatch.call('change:year',null,year));
 
-	const charts = select('.chart-container')
-		.selectAll('.chart')
-		.data(data, d => d.key);
-	const chartsEnter = charts.enter()
-		.append('div')
-		.attr('class','chart')
-	charts.exit().remove();
-
-	charts.merge(chartsEnter)
-		.each(function(d){
-			lineChart(
-				d.values, 
-				this,
-				d.key
-			);
-		});
-}
-
-function renderComposition(data, year){
-  const composition = Composition()
-    .year(year);
-
-	select('.composition-container')
-		.each(function(){
-			composition(this, data);
-		});
-}
+// ----------------------------------------------
 
 function renderCartogram(data){
-	select('.cartogram-container')
+	d3.select('.cartogram-container')
 		.each(function(){
 			Cartogram(this, data);
 		});
 }
+
 

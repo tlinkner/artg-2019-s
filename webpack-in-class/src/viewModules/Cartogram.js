@@ -38,7 +38,7 @@ export default function Cartogram(rootDOM, data){
 		return d;
 	});
   
-  console.log(dataByYear);
+//  console.log(dataByYear);
 
 	//Append DOM elements
 	const svg = select(rootDOM)

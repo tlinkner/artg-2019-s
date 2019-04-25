@@ -1,6 +1,5 @@
 import {nest, sum} from 'd3';
 
-//Utility functions for parsing metadata, migration data, and country code
 function parseMetadata(d){
 	return {
 		iso_a3: d.ISO_A3,
@@ -17,18 +16,17 @@ function parseMetadata(d){
 function parseCountryCode(d){
 	return [
 		d['Region, subregion, country or area'],
-		d.Code.padStart(3, '0')
+		d.Code
 	]
 }
 
 function parseMigrationData(d){
+	if(+d.Code >= 900) return;
 
 	const migrationFlows = [];
 	const dest_name = d['Major area, region, country or area of destination'];
 	const year = +d.Year
 
-	if(+d.Code >= 900 || dest_name === '') return;
-	
 	delete d.Year;
 	delete d['Sort order'];
 	delete d['Major area, region, country or area of destination'];
@@ -54,23 +52,8 @@ function parseMigrationData(d){
 	return migrationFlows;
 }
 
-function groupBySubregionByYear(code, migration){
-
-	const filteredData = migration.filter(d => d.origin_code === code);
-
-	const subregionsData = nest()
-		.key(d => d.dest_subregion)
-		.key(d => d.year)
-		.rollup(values => sum(values, d => d.value))
-		.entries(filteredData);
-
-	return subregionsData;
-
-}
-
 export {
 	parseMigrationData,
 	parseMetadata,
-	parseCountryCode,
-	groupBySubregionByYear
+	parseCountryCode
 }
