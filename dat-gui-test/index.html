@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GUI/Dispatch Test</title>
+<style>
+body { margin: 2em; font-family: sans-serif;}
+.plot { width: 600px; height: 600px; background: #eee;}
+</style>
+</head>
+<body>
+<h1>GUI/Dispatch Test</h1>
+<div class="plot"></div>
+<script src="lib/d3.min.js"></script>  
+<script src="lib/dat.gui.min.js"></script>
+<script>
+
+// Dispatch
+const dispatch = d3.dispatch('update:boxRotation');
+
+
+// GUI
+const gui = new dat.gui.GUI();
+const obj = {
+	boxRotation: 180
+}
+
+gui.add(obj, 'boxRotation').min(0).max(360).onChange(() => dispatch.call('update:boxRotation', null, obj));
+
+
+// Plot
+const plot = d3.select(".plot")
+  .append('svg')
+  .attr("width",600)
+  .attr("height",600);
+  
+const box = plot.append("rect")
+  .attr("x",100)
+  .attr("y",100)
+  .attr("width",400)
+  .attr("height",200)
+  .attr("fill","red")
+  .attr("opacity",0.3)
+  .attr("transform",`rotate(${obj.boxRotation}, 300, 300)`);
+
+dispatch.on('update:boxRotation', param => {
+    box
+      .attr("transform",`rotate(${obj.boxRotation}, 300, 300)`);
+  });
+  
+
+// Axes
+plot.append("line")
+  .attr("x1",300)
+  .attr("y1",0)
+  .attr("x2",300)
+  .attr("y2",600)
+  .attr("stroke","red");
+  
+plot.append("line")
+  .attr("x1",0)
+  .attr("y1",300)
+  .attr("x2",600)
+  .attr("y2",300)
+  .attr("stroke","red");
+
+</script>
+</body>
+</html>

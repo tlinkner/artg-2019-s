@@ -15,14 +15,12 @@ Promise.all([
 		//DATA MANIPULATION
 
 		//Convert metadata to a metadata map
-		const metadata_tmp = metadata.map(d => {
-				return [d.iso_num, d]
-			});
+		const metadata_tmp = metadata.map(d => [d.iso_num, d]);
 		const metadataMap = new Map(metadata_tmp);
-
+		
 		//Let's pick a year, say 2000, and filter the migration data
 		const migration_2000 = migration.filter(d => d.year === 2000);
-		console.log(migration_2000);
+		// console.log(migration_2000);
 
 		//YOUR CODE HERE
 		//Nest/group migration_2000 by origin_country
@@ -37,11 +35,25 @@ Promise.all([
         }
       });
       
-    console.log(migration_origin_by_country);
+    // console.log(migration_origin_by_country);
 
 		//YOUR CODE HERE
 		//Then, join the transformed migration data to the lngLat values in the metadata
 
+		migration_origin_by_country = migration_origin_by_country.map(d=>{
+			let code = countryCode.get(d.key);
+			let metadata = metadataMap.get(code);
+			if(metadata){
+				d.code = code;
+				d.lngLat = metadata.lngLat;
+				d.subregion = metadata.subregion;
+				d.name_display = metadata.name_display;
+				d.iso_a3 = metadata.iso_a3
+			} else {
+				// console.log(`Metadata for ${d.key} code ${code} not found`);
+			}
+				return d;		
+		}).filter(d=>"code" in d)
 
 		//REPRESENT
 		drawCartogram(d3.select('.cartogram').node(), migration_origin_by_country);
@@ -53,20 +65,65 @@ Promise.all([
 //Some of the functions related to geographic representation have already been implemented, so feel free to use them
 function drawCartogram(rootDom, data){
 
+	// console.log(data)
+	
 	//measure the width and height of the rootDom element
 	const w = rootDom.clientWidth;
 	const h = rootDom.clientHeight;
 
 	//projection function: takes [lng, lat] pair and returns [x, y] coordinates
 	const projection = d3.geoMercator()
-		.translate([w/2, h/2]);
+		.translate([w/2, h/2])
+		.scale(180);
 
 	//Scaling function for the size of the cartogram symbols
 	//Assuming the symbols are circles, we use a square root scale
-	const scaleSize = d3.scaleSqrt().domain([0,1000000]).range([5,50]);
+	const scaleSize = d3.scaleSqrt()
+		.domain([0,d3.max(data,d=>d.total)])
+		.range([5,30]);
 
 	//Complete the rest of the code here
 	//Build the DOM structure using enter / exit / update
+	const plot = d3.select(rootDom)
+		.append("svg")
+		.attr("width",w)
+		.attr("height",h)
+		.append("g");
+		
+	const nodes = plot.selectAll(".node")
+		.data(data, d=>d.key);
+		
+	const nodesEnter = nodes.enter()
+		.append("g")
+		.attr("class","node");
+	
+	nodesEnter.append("circle");
+	
+	nodesEnter.append("text")
+		.attr("text-anchor","middle");
+		
+	nodes.merge(nodesEnter)
+		.filter(d=>d.lngLat)
+		.attr("transform",d=>{
+			const xy = projection(d.lngLat);
+			return `translate(${xy[0]}, ${xy[1]})`;
+		})
+		
+	nodes.merge(nodesEnter)
+		.select("circle")
+		.attr("r", d => scaleSize(d.total))
+		.style("fill-opacity", .03)
+		.style("stroke", "black")
+		.style("stroke-width", "1px")
+		.style("stroke-opacity", 0.3)
+	
+	nodes.merge(nodesEnter)
+		.select("text")
+		.attr("y", d => -scaleSize(d.total))
+		.filter(d => d.total > 1000000)
+		.text(d => d.key)
+		.style("font-family", "sans-serif")
+		.style("font-size", "10px")
 
 }
 

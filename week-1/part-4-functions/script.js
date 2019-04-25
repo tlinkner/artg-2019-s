@@ -17,7 +17,6 @@ d3.csv('../../data/world-bank/cb704cf4-fe8f-4f1b-ae0c-2a51c26f295f_Data.csv', pa
 		// - series name, such as "Population, total"
 		//And return small array of values, sorted by year
 		function filterByCountrySeries(rows, country, series){
-      // map?
       const filteredData = rows.filter(d => d.countryCode === country)
         .filter(d => d.series === series);
       return filteredData;

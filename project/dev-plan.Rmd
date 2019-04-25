@@ -1,0 +1,121 @@
+---
+title: "Dev Plan"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sources
+
+* Democracy Index: The Economist: https://www.eiu.com/topic/democracy-index
+* Country Religion Data: Pew: https://www.pewforum.org/2015/04/02/religious-projection-table/
+* The Intercept/Deconstructed Podcast
+* Book on Gallup Poll
+
+## Story
+
+Relationship between democracy and religous practice. 
+
+Questions: is demcratic practice affaceted by the religous composision? Is it affected by plurality? 
+
+Assumptions that moral values affect citiczenship. Does the democracy index refect the citiczenship.
+
+**Anti-muslim bias in US media**
+
+Known biases in US media affecting foreign policy and public perception, especially the muslim world. Transferrence of bias to muslim  pospulation. Founded on US experience. Muslim countries by composition are different than 
+
+**Evaluating Democracy: Democracy Index**
+
+What is it?
+
+Introduce category and color key.
+
+Country case studies.
+
+Egypt. 
+India.
+United States.
+
+* TODO: Look up details on Democracy Index.
+
+* TODO: List examples of biases
+
+* Note: only 167 countries in the democracy index. That is what I am looking at.
+
+
+## Questions
+
+* Should I separate democracy index and religion data? Merge in D3?
+* What to join on? SHould I lookup un country codes? (NO:Only 167 countries in the democracy index)
+
+## Interface
+
+Views:
+
+
+Use geoEqualEarthRaw projection
+of geoEquirectangularRaw
+
+Country 1: Saudi Arabia default
+COuntry 2: India default
+
+
+Example: Mideast countries, Muslim polupation vs. asia (indonesia/India)
+
+Choose country, show composition, population relative to India, US.
+
+
+## Infrastructure
+
+1. Set up new repo
+2. Import data (need to make decisions on this)
+
+    
+
+3. Set up webpack
+4. Establish components
+5. Set up dispatch and make demo of it working
+
+
+## Data Notes
+
+* Religion Lookup (Full names based on first mart of key: TODO: function getReligionName())
+
+* Democracy Index
+    * id? (UN country code)
+    * country (Key)
+    * di_rank (di = Democracy Index)
+    * di_score
+    * di_category
+    * di_pluralism
+    * di_functioning
+    * di_participation
+    * di_culture
+    * di_civilliberties
+    
+* Pew Regligion
+    * id? (UN country code)
+    * country (Key)
+    * longitude (TODO: lookup if mapping)
+    * Latitude (TODO: lookup if mapping)
+    * region
+    * total_religion
+    * christian_cnt
+    * christian_pct
+    * muslim_cnt
+    * muslim_pct
+    * hindu_cnt
+    * hindu_pct
+    * buddhist_cnt
+    * buddhist_pct
+    * folk_cnt
+    * folk_pct
+    * judiasm_cnt
+    * judiasm_pct
+    * other_cnt
+    * other_pct
+    * unaffiliated_cnt
+    * unaffiliated_pct
+
