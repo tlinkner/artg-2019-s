@@ -28,7 +28,7 @@ function parseMigrationData(d){
 	const year = +d.Year
 
 	if(+d.Code >= 900 || dest_name === '') return;
-	
+
 	delete d.Year;
 	delete d['Sort order'];
 	delete d['Major area, region, country or area of destination'];
@@ -54,15 +54,13 @@ function parseMigrationData(d){
 	return migrationFlows;
 }
 
-function groupBySubregionByYear(code, migration){
-
-	const filteredData = migration.filter(d => d.origin_code === code);
+function groupBySubregionByYear(data){
 
 	const subregionsData = nest()
 		.key(d => d.dest_subregion)
 		.key(d => d.year)
 		.rollup(values => sum(values, d => d.value))
-		.entries(filteredData);
+		.entries(data);
 
 	return subregionsData;
 

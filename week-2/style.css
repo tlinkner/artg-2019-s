@@ -1,32 +1,23 @@
 html,body{
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
+	margin:0;
+	padding:0;
 }
 
-h1 {
-  padding: 0.5em;
+.module{
+	min-height:600px;
 }
 
-.chart {
-  width: 400px;
-  height: 300px;
-  float: left;
-  margin: 20px;
-  background: pink;
+.axis .domain{
+	display:none;
 }
 
-/*
-.module {
-  min-height: 600px;
-  background: pink;
-}
-*/
-
-.axis-y .domain {
-  display: none;
+.axis line{
+	opacity:0.2;
 }
 
-.axis-y line {
-  opacity: 0.2;
+.chart{
+	width:400px;
+	height:300px;
+	float:left;
+	margin:20px;
 }

@@ -7,160 +7,159 @@ const metadatPromise = d3.csv('../data/country-metadata.csv', parseMetadata);
 
 // combine three Promises. ensures all data is loaded
 Promise.all([
-    migrationDataPromise,
-    countryCodePromise,
-    metadatPromise
-  ])
-  .then(([migration, countryCode, metadata]) => {
+		migrationDataPromise,
+		countryCodePromise,
+		metadataPromise
+	])
+	.then(([migration, countryCode, metadata]) => {
 
-      const metadata_tmp = metadata.map(d => {
-        return [d.iso_num, d]
-      })
+		//Convert metadata to a map
+		const metadata_tmp = metadata.map(a => {
+			return [a.iso_num, a]
+		});
+		const metadataMap = new Map(metadata_tmp);
 
-      const metadataMap = new Map(metadata_tmp);
-      const migrationAugmented = migration.map(d => {
-        // look code for origin
-        const origin_code = countryCode.get(d.origin_name);
-        const dest_code = countryCode.get(d.dest_name);
-        // Go to metadata, look up region
-        const origin_metadata = metadataMap.get(origin_code);
-        const dest_metadata = metadataMap.get(dest_code);
+		const migrationAugmented = migration.map(d => {
 
-        d.origin_code = origin_code;
-        d.dest_code = dest_code;
+			const origin_code = countryCode.get(d.origin_name);
+			const dest_code = countryCode.get(d.dest_name);
 
-        if(origin_metadata) {
-          d.origin_subregion = origin_metadata.subregion;
-        }
-        if(dest_metadata) {
-          d.dest_subregion = dest_metadata.subregion;
-        }
+			d.origin_code = origin_code;
+			d.dest_code = dest_code;
 
-        return d;
-      });
+			//Take the 3-digit code, get metadata record
+			const origin_metadata = metadataMap.get(origin_code);
+			const dest_metadata = metadataMap.get(dest_code);
 
-      const migrationFiltered = migrationAugmented.filter(d=>d.origin_code ==="840");
+			// if(!origin_metadata){
+			// 	console.log(`lookup failed for ` + d.origin_name + ' ' + d.origin_code);
+			// }
+			// if(!dest_metadata){
+			// 	console.log(`lookup failed for ${d.origin_name} ${d.origin_code}`)
+			// }
+			if(origin_metadata){
+				d.origin_subregion = origin_metadata.subregion;
+			}
+			if(dest_metadata){
+				d.dest_subregion = dest_metadata.subregion;
+			}
 
-      const usData = d3.nest()
-        .key(d => d.year)
-        .entries(migrationFiltered)
-        .map(yearGroup => {
-          return {
-            year: +yearGroup.key, // ensure a number
-            total: d3.sum(yearGroup.values, d => d.value), // pick prop out of sum
-            max: d3.max(yearGroup.values, d => d.value),
-            min: d3.min(yearGroup.values, d => d.value)
-          }
-        });
+			return d;
+		});
 
-//      lineChart(
-//        data, // us data we just filted
-//        d3.select('.module').node() // selection + node
-//      );
+		console.log(migrationAugmented);
 
-      // Group by subregion, then by year
-      const subregionsData = d3.nest()
-        .key(d => d.origin_subregion)
-        .key(d => d.year)
-        .rollup(values => d3.sum(values, d => d.value))
-        .entries(migrationAugmented);
+		//Migration from the US (840) to any other place in the world
+		//filter the larger migration dataset to only the subset coming from the US
+		const migrationFiltered = migrationAugmented.filter(d => d.origin_code === "840"); //array of 1145 individual flows
 
-      console.log(subregionsData);
+		//group or nest by year, end result is array of 7, one element for each year
+		const usData = d3.nest()
+			.key(d => d.year)
+			.entries(migrationFiltered)
+			.map(yearGroup => {
+				return {
+					year: +yearGroup.key,
+					total: d3.sum(yearGroup.values, d => d.value), //the array of roughly 200 of individual migration flows
+					max: d3.max(yearGroup.values, d => d.value),
+					min: d3.min(yearGroup.values, d => d.value)
+				}
+			});
+		console.log(usData);
 
-      d3.select('.chart-container')
-        .selectAll('.chart') // 0 elems
-        .data(subregionsData)
-        .enter()
-        .append('div') // if a deficit, create elems
-        .attr('class','chart') // has a data friend, each region joined to a chart
-        .each(function(d){
-          console.log(d.values)
-          console.log(this)
-          lineChart(d.values, this);
-        }) // takes a selection, iterate over items with bound data
-        ;
+		//group by subregion
+		const subregionsData = d3.nest()
+			.key(d => d.dest_subregion)
+			.key(d => d.year)
+			.rollup(values => d3.sum(values, d => d.value))
+			.entries(migrationAugmented);
+
+		d3.select('.main')
+			.selectAll('.chart') //0
+			.data(subregionsData)
+			.enter()
+			.append('div')
+			.attr('class','chart')
+			.each(function(d){
+				console.group()
+				console.log(this);
+				console.log(d);
+				console.groupEnd();
+
+				lineChart(
+					d.values, //array of 7
+					this
+				);
+			})
 
 
-  });
+	})
 
-
-// Drawing a chart based on serial x-y data
-// Function signature: expains wat args are expected and type
+//Drawing line chart based on serial x-y data
+//Function "signature": what arguments are expected, how many, and what they should look like
 function lineChart(data, rootDOM){
 
-  // need to make sure array is sorted
+	//data
+	//[{}, {}, {}...]x7
 
-
-//  console.log("linechart");
-//  console.log(data);
-//  console.log(rootDOM);
-  const W = rootDOM.clientWidth;
-  const H = rootDOM.clientHeight;
-  const margin = {t: 32,r: 32,b: 64, l: 64};
-  const innerWidth = W - margin.l - margin.r;
-  const innerHeight = H - margin.t - margin.b;
+	const W = rootDOM.clientWidth;
+	const H = rootDOM.clientHeight;
+	const margin = {t:32, r:32, b:64, l:64};
+	const innerWidth = W - margin.l - margin.r;
+	const innerHeight = H - margin.t - margin.b;
 
 	const scaleX = d3.scaleLinear().domain([1985,2020]).range([0, innerWidth]);
-	const scaleY = d3.scaleLinear().domain([0, 25000000]).range([innerHeight,0]);
+	const scaleY = d3.scaleLinear().domain([0, 25000000]).range([innerHeight, 0]);
 
-  const axisX = d3.axisBottom()
-    .scale(scaleX)
-    .tickFormat(function(val){
-      return "'"+String(val).slice(-2)
-    });
+	//take array of xy values, and produce a shape attribute for <path> element
+	const lineGenerator = d3.line()
+		.x(d => scaleX(+d.key))
+		.y(d => scaleY(d.value)); //function
+	const areaGenerator = d3.area()
+		.x(d => scaleX(+d.key))
+		.y0(innerHeight)
+		.y1(d => scaleY(d.value));
 
-  const axisY = d3.axisLeft()
-    .scale(scaleY)
-    .tickSize(-innerWidth)
-    .ticks(3);
+	const axisX = d3.axisBottom()
+		.scale(scaleX)
+		.tickFormat(function(value){ return "'"+String(value).slice(-2)})
 
+	const axisY = d3.axisLeft()
+		.scale(scaleY)
+		.tickSize(-innerWidth)
+		.ticks(3)
 
-  // temp hack to remove last elem
-  data.pop();
+	const svg = d3.select(rootDOM)
+		.append('svg')
+		.attr('width', W)
+		.attr('height', H);
+	const plot = svg.append('g')
+		.attr('class','plot')
+		.attr('transform', `translate(${margin.l}, ${margin.t})`);
 
-  const lineGenerator = d3.line()
-  .x(d => scaleX(d.key))
-  .y(d => scaleY(d.value));
+	plot.append('path')
+		.attr('class','line')
+		.datum(data)
+		//some visual shape i.e. geometry, "d"
+		.attr('d', data => lineGenerator(data))
+		.style('fill','none')
+		.style('stroke','#333')
+		.style('stroke-width','2px')
 
-  const areaGenerator = d3.area()
-  .x(d => scaleX(+d.key))
-  .y0(innerHeight)
-  .y1(d => scaleY(d.value));
+	plot.append('path')
+		.attr('class','area')
+		.datum(data)
+		.attr('d', data => areaGenerator(data))
+		.style('fill-opacity',0.03)
 
-  console.log(innerWidth);
-  console.log(scaleX(1990));
+	plot.append('g')
+		.attr('class','axis axis-x')
+		.attr('transform',`translate(0, ${innerHeight})`)
+		.call(axisX)
 
-  const svg = d3.select(rootDOM)
-    .append('svg')
-    .attr('width', W)
-    .attr('height', H);
-
-  const plot = svg.append('g')
-    .attr('transform', `translate(${margin.l}, ${margin.t})`);
-
-  plot.append('path')
-    .attr('class','line')
-    .datum(data)
-    .attr('d',d => lineGenerator(d))
-    .attr('fill','none')
-    .attr('stroke','red');
-
-  plot.append('path')
-    .attr('class','area')
-    .datum(data)
-    .attr('d',d => areaGenerator(d))
-    .attr('fill','red')
-    .attr('fill-opacity',0.3);
-
-  plot.append('g')
-    .attr('class','axis-x')
-    .attr('transform',`translate(0,${innerHeight})`)
-    .call(axisX);
-
-  plot.append('g')
-    .attr('class','axis-y')
-    .call(axisY);
-
+	plot.append('g')
+		.attr('class','axis axis-y')
+		.call(axisY);
 
 }
 

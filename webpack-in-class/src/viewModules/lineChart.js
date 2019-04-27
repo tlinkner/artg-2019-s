@@ -4,7 +4,7 @@ function LineChart(){
 
 	let maxY;
 	const bisect = d3.bisector(d => d.key).right; //this will give us a function
-	let yearChangeCallBack; // global scope of the function
+	let yearChangeCallback;
 
 	function exportFunction(data, rootDOM, key){
 
@@ -116,17 +116,17 @@ function LineChart(){
 				const mouse = d3.mouse(this);
 				const mouseX = mouse[0];
 				const year = scaleX.invert(mouseX);
-				
+
 				const idx = bisect(data, year);
-				const datum = data[idx]; // year and value
+				const datum = data[idx];
 
 				plot.select('.tool-tip')
 					.attr('transform', `translate(${scaleX(datum.key)}, ${scaleY(datum.value)})`)
 					.select('text')
 					.text(datum.value);
-          
-          yearChangeCallBack(datum.key);
-          
+
+				yearChangeCallback(datum.key);
+
 			})
 			.on('mouseleave', function(d){
 				plot.select('.tool-tip')
@@ -141,7 +141,9 @@ function LineChart(){
 	}
 
 	exportFunction.onChangeYear = function(callback){
-    yearChangeCallBack = callback; // can use anywhere in the module, whatever function you pass in
+		//event ==> "year:change"
+		//callback ==> arg => console.log(arg)
+		yearChangeCallback = callback; //arg => console.log(arg)
 		return this;
 	}
 
